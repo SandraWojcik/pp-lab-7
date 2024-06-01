@@ -8,7 +8,10 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class Main extends Application {
     private TextField directoryPathField;
@@ -69,24 +72,38 @@ public class Main extends Application {
         }
 
         StringBuilder results = new StringBuilder();
-        listFilesInDirectory(directory, results);
+        String searchPhrase = searchField.getText().toLowerCase();
+        searchInDirectory(directory, results, searchPhrase);
 
         resultArea.setText(results.toString());
     }
 
-    private void listFilesInDirectory(File directory, StringBuilder results) {
+    private void searchInDirectory(File directory, StringBuilder results, String searchPhrase) {
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
                 if (file.isDirectory()) {
-                    listFilesInDirectory(file, results); // Rekurencyjne przeszukiwanie katalogów
+                    searchInDirectory(file, results, searchPhrase); // Rekurencyjne przeszukiwanie katalogów
                 } else {
-                    String searchPhrase = searchField.getText().toLowerCase();
-                    if (file.getName().toLowerCase().contains(searchPhrase)) {
+                    if (containsPhrase(file, searchPhrase)) {
                         results.append(file.getAbsolutePath()).append("\n");
                     }
                 }
             }
         }
+    }
+
+    private boolean containsPhrase(File file, String searchPhrase) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.toLowerCase().contains(searchPhrase)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
